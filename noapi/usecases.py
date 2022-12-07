@@ -24,7 +24,7 @@ class ResourceUsecases(TypedDict):
     delete: Callable[[ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]
 
 
-def get_for_resource(resource: str, model: BaseModel) -> ResourceUsecases:
+def get_for_resource(resource: str, model: type[BaseModel]) -> ResourceUsecases:
     return {
         "get_one": create_get_one_function(resource, model),
         "get_many": create_get_many_function(resource, model),
@@ -35,7 +35,7 @@ def get_for_resource(resource: str, model: BaseModel) -> ResourceUsecases:
 
 
 def create_get_one_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 
@@ -50,7 +50,7 @@ def create_get_one_function(
 
 
 def create_get_many_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[int, int], Awaitable[list[dict[str, Any]] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 
@@ -67,7 +67,7 @@ def create_get_many_function(
 
 
 def create_post_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[BaseModel], Awaitable[dict[str, Any] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 
@@ -82,7 +82,7 @@ def create_post_function(
 
 
 def create_patch_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[
     [ResourceIdentifier, BaseModel], Awaitable[dict[str, Any] | ServiceError]
 ]:
@@ -101,7 +101,7 @@ def create_patch_function(
 
 
 def create_delete_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 

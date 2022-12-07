@@ -41,7 +41,7 @@ def determine_http_code(error: ServiceError) -> int:
 
 def create_get_many_function(
     resource: str,
-    model: models.BaseModel,
+    model: type[models.BaseModel],
 ) -> Callable[[fastapi.Request], Awaitable[fastapi.Response]]:
     usecases = _usecases.get_for_resource(resource, model)
 
@@ -81,7 +81,7 @@ def create_get_many_function(
 
 def create_get_one_function(
     resource: str,
-    model: models.BaseModel,
+    model: type[models.BaseModel],
 ) -> Callable[[fastapi.Request], Awaitable[fastapi.Response]]:
     usecases = _usecases.get_for_resource(resource, model)
 
@@ -119,7 +119,7 @@ def create_get_one_function(
 
 def create_post_function(
     resource: str,
-    model: models.BaseModel,
+    model: type[models.BaseModel],
 ) -> Callable[[models.BaseModel], Awaitable[fastapi.Response]]:
     usecases = _usecases.get_for_resource(resource, model)
 
@@ -157,7 +157,7 @@ def create_post_function(
 
 def create_patch_function(
     resource: str,
-    model: models.BaseModel,
+    model: type[models.BaseModel],
 ) -> Callable[[ResourceIdentifier, models.BaseModel], Awaitable[fastapi.Response]]:
     usecases = _usecases.get_for_resource(resource, model)
 
@@ -197,7 +197,7 @@ def create_patch_function(
 
 def create_delete_function(
     resource: str,
-    model: models.BaseModel,
+    model: type[models.BaseModel],
 ) -> Callable[[fastapi.Request], Awaitable[fastapi.Response]]:
     usecases = _usecases.get_for_resource(resource, model)
 

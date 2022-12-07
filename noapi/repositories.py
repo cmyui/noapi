@@ -22,7 +22,7 @@ class ResourceRepository(TypedDict):
     delete: Callable[[ResourceIdentifier], Awaitable[dict[str, Any]]]
 
 
-def get_for_resource(resource: str, model: BaseModel) -> ResourceRepository:
+def get_for_resource(resource: str, model: type[BaseModel]) -> ResourceRepository:
     return {
         "get_one": create_get_one_function(resource, model),
         "get_many": create_get_many_function(resource, model),
@@ -33,7 +33,7 @@ def get_for_resource(resource: str, model: BaseModel) -> ResourceRepository:
 
 
 def create_get_one_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[ResourceIdentifier], Awaitable[dict[str, Any]]]:
     async def get_one(id: ResourceIdentifier) -> dict[str, Any]:
         return {"id": 1, "name": "foo"}
@@ -42,7 +42,7 @@ def create_get_one_function(
 
 
 def create_get_many_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[int, int], Awaitable[list[dict[str, Any]]]]:
     async def get_many(page: int, page_size: int) -> list[dict[str, Any]]:
         return [{"id": 1, "name": "foo"}, {"id": 2, "name": "bar"}]
@@ -51,7 +51,7 @@ def create_get_many_function(
 
 
 def create_post_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[BaseModel], Awaitable[dict[str, Any]]]:
     async def post(data: BaseModel) -> dict[str, Any]:
         return {"id": 1, "name": "foo"}
@@ -60,7 +60,7 @@ def create_post_function(
 
 
 def create_patch_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[ResourceIdentifier, BaseModel], Awaitable[dict[str, Any]]]:
     async def patch(id: ResourceIdentifier, data: BaseModel) -> dict[str, Any]:
         return {"id": 1, "name": "foo"}
@@ -69,7 +69,7 @@ def create_patch_function(
 
 
 def create_delete_function(
-    resource: str, model: BaseModel
+    resource: str, model: type[BaseModel]
 ) -> Callable[[ResourceIdentifier], Awaitable[dict[str, Any]]]:
     async def delete(id: ResourceIdentifier) -> dict[str, Any]:
         return {"id": 1, "name": "foo"}

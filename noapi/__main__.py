@@ -87,41 +87,45 @@ def main(resources: Mapping[str, Any]) -> int:
     routes: list[starlette.routing.BaseRoute] = []
 
     for resource, resource_def in resources.items():
-        resource_model = pydantic.create_model(resource, **resource_def["model"])
+        resource_model = pydantic.create_model(
+            resource,
+            **resource_def["model"],
+            __base__=models.BaseModel,
+        )
 
         for method in resource_def["methods"]:
             if method == controllers.Method.GET_ONE:
                 endpoint_function = controllers.create_get_one_function(
                     resource,
-                    resource_def["model"],
+                    resource_model,
                 )
                 path = f"/{resource.lower()}/{{id}}"
                 response_model = resource_model
             elif method == controllers.Method.GET_MANY:
                 endpoint_function = controllers.create_get_many_function(
                     resource,
-                    resource_def["model"],
+                    resource_model,
                 )
                 path = f"/{resource.lower()}"
                 response_model = list[type[resource_model]]
             elif method == controllers.Method.POST:
                 endpoint_function = controllers.create_post_function(
                     resource,
-                    resource_def["model"],
+                    resource_model,
                 )
                 path = f"/{resource.lower()}"
                 response_model = resource_model
             elif method == controllers.Method.PATCH:
                 endpoint_function = controllers.create_patch_function(
                     resource,
-                    resource_def["model"],
+                    resource_model,
                 )
                 path = f"/{resource.lower()}/{{id}}"
                 response_model = resource_model
             elif method == controllers.Method.DELETE:
                 endpoint_function = controllers.create_delete_function(
                     resource,
-                    resource_def["model"],
+                    resource_model,
                 )
                 path = f"/{resource.lower()}/{{id}}"
                 response_model = resource_model
