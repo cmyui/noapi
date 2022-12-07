@@ -66,6 +66,8 @@ def main(resources: Mapping[str, Any]) -> int:
     routes: list[starlette.routing.BaseRoute] = []
 
     for resource_name, resource in resources.items():
+        # TODO: this creates the models in the pydantic.main namespace which
+        #       *might* be a problem
         resource_model = pydantic.create_model(
             resource_name,
             **resource["model"],
