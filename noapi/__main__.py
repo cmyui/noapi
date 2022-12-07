@@ -44,7 +44,7 @@ def create_endpoint(
     elif method == controllers.Method.GET_MANY:
         endpoint_function = controllers.create_get_many_function(resource_def, model)
         path = f"/{resource_name.lower()}"
-        response_model = list[type[model]]  # TODO: does this work? lol
+        response_model = list[type[model]]
         print(response_model)
     elif method == controllers.Method.POST:
         endpoint_function = controllers.create_post_function(resource_def, model)
