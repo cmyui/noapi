@@ -5,7 +5,7 @@ import httpx
 from noapi import context
 
 
-class RestContext(context.AbstractContext):
+class RestContext(context.Context):
     def __init__(self, request: fastapi.Request) -> None:
         self._request = request
 

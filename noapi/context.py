@@ -4,7 +4,7 @@ import databases
 import httpx
 
 
-class AbstractContext(abc.ABC):
+class Context(abc.ABC):
     @property
     @abc.abstractmethod
     def database_client(self) -> databases.Database:

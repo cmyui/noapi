@@ -4,6 +4,7 @@ from collections.abc import Callable
 from typing import Any
 
 import fastapi
+from fastapi import Depends
 
 import noapi.logger as logger
 import noapi.rest.responses as responses
@@ -11,6 +12,7 @@ from noapi import models
 from noapi import usecases as _usecases
 from noapi._typing import ResourceIdentifier
 from noapi.errors import ServiceError
+from noapi.rest.context import RestContext
 
 
 class Method(str, enum.Enum):
@@ -46,7 +48,10 @@ def create_get_many_function(
     usecases = _usecases.get_for_resource(resource, model)
 
     async def function(
-        request: fastapi.Request, page: int = 1, page_size: int = 10
+        request: fastapi.Request,
+        page: int = 1,
+        page_size: int = 10,
+        ctx: RestContext = Depends(),
     ) -> fastapi.Response:
         usecase = usecases.get("get_many")
         if usecase is None:
@@ -61,7 +66,7 @@ def create_get_many_function(
                 status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        data = await usecase(page, page_size)
+        data = await usecase(ctx, page, page_size)
         if isinstance(data, ServiceError):
             return responses.failure(
                 error=data,
@@ -85,7 +90,10 @@ def create_get_one_function(
 ) -> Callable[[fastapi.Request], Awaitable[fastapi.Response]]:
     usecases = _usecases.get_for_resource(resource, model)
 
-    async def function(id: ResourceIdentifier) -> fastapi.Response:
+    async def function(
+        id: ResourceIdentifier,
+        ctx: RestContext = Depends(),
+    ) -> fastapi.Response:
         usecase = usecases.get("get_one")
         if usecase is None:
             logger.error(
@@ -99,7 +107,7 @@ def create_get_one_function(
                 status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        data = await usecase(id)
+        data = await usecase(ctx, id)
         if isinstance(data, ServiceError):
             return responses.failure(
                 error=data,
@@ -123,7 +131,10 @@ def create_post_function(
 ) -> Callable[[models.BaseModel], Awaitable[fastapi.Response]]:
     usecases = _usecases.get_for_resource(resource, model)
 
-    async def function(obj: models.BaseModel) -> fastapi.Response:
+    async def function(
+        obj: models.BaseModel,
+        ctx: RestContext = Depends(),
+    ) -> fastapi.Response:
         usecase = usecases.get("post")
         if usecase is None:
             logger.error(
@@ -137,7 +148,7 @@ def create_post_function(
                 status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        data = await usecase(obj)
+        data = await usecase(ctx, obj)
         if isinstance(data, ServiceError):
             return responses.failure(
                 error=data,
@@ -163,7 +174,11 @@ def create_patch_function(
 
     # TODO: need to type `obj` here dynamically. this might need a refactor?
     # TODO: can i type id here? (do i need to?)
-    async def function(id: ResourceIdentifier, obj: Any) -> fastapi.Response:
+    async def function(
+        id: ResourceIdentifier,
+        obj: Any,
+        ctx: RestContext = Depends(),
+    ) -> fastapi.Response:
         usecase = usecases.get("patch")
         if usecase is None:
             logger.error(
@@ -177,7 +192,7 @@ def create_patch_function(
                 status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        data = await usecase(id, obj)
+        data = await usecase(ctx, id, obj)
         if isinstance(data, ServiceError):
             return responses.failure(
                 error=data,
@@ -202,7 +217,10 @@ def create_delete_function(
     usecases = _usecases.get_for_resource(resource, model)
 
     # TODO: can i type id here? (do i need to?)
-    async def function(id: ResourceIdentifier) -> fastapi.Response:
+    async def function(
+        id: ResourceIdentifier,
+        ctx: RestContext = Depends(),
+    ) -> fastapi.Response:
         usecase = usecases.get("delete")
         if usecase is None:
             logger.error(
@@ -216,7 +234,7 @@ def create_delete_function(
                 status_code=fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        data = await usecase(id)
+        data = await usecase(ctx, id)
         if isinstance(data, ServiceError):
             return responses.failure(
                 error=data,

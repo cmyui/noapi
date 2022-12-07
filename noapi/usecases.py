@@ -8,20 +8,21 @@ from typing import TypeVar
 
 from noapi import repositories
 from noapi._typing import ResourceIdentifier
+from noapi.context import Context
 from noapi.errors import ServiceError
 from noapi.models import BaseModel
 
 R = TypeVar("R")
 
 
+# fmt: off
 class ResourceUsecases(TypedDict):
-    get_one: Callable[[ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]
-    get_many: Callable[[int, int], Awaitable[list[dict[str, Any]] | ServiceError]]
-    post: Callable[[BaseModel], Awaitable[dict[str, Any] | ServiceError]]
-    patch: Callable[
-        [ResourceIdentifier, BaseModel], Awaitable[dict[str, Any] | ServiceError]
-    ]
-    delete: Callable[[ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]
+    get_one: Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]
+    get_many: Callable[[Context, int, int], Awaitable[list[dict[str, Any]] | ServiceError]]
+    post: Callable[[Context, BaseModel], Awaitable[dict[str, Any] | ServiceError]]
+    patch: Callable[[Context, ResourceIdentifier, BaseModel],Awaitable[dict[str, Any] | ServiceError],]
+    delete: Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]
+# fmt: on
 
 
 def get_for_resource(resource: str, model: type[BaseModel]) -> ResourceUsecases:
@@ -36,11 +37,13 @@ def get_for_resource(resource: str, model: type[BaseModel]) -> ResourceUsecases:
 
 def create_get_one_function(
     resource: str, model: type[BaseModel]
-) -> Callable[[ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
+) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 
-    async def get_one(id: ResourceIdentifier) -> dict[str, Any] | ServiceError:
-        data = await repository["get_one"](id)
+    async def get_one(
+        ctx: Context, id: ResourceIdentifier
+    ) -> dict[str, Any] | ServiceError:
+        data = await repository["get_one"](ctx, id)
         if data is None:
             return ServiceError.RESOURCE_NOT_FOUND
 
@@ -51,13 +54,13 @@ def create_get_one_function(
 
 def create_get_many_function(
     resource: str, model: type[BaseModel]
-) -> Callable[[int, int], Awaitable[list[dict[str, Any]] | ServiceError]]:
+) -> Callable[[Context, int, int], Awaitable[list[dict[str, Any]] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 
     async def get_many(
-        page: int, page_size: int
+        ctx: Context, page: int, page_size: int
     ) -> list[dict[str, Any]] | ServiceError:
-        data = await repository["get_many"](page, page_size)
+        data = await repository["get_many"](ctx, page, page_size)
         if data is None:
             return ServiceError.RESOURCE_NOT_FOUND
 
@@ -68,11 +71,11 @@ def create_get_many_function(
 
 def create_post_function(
     resource: str, model: type[BaseModel]
-) -> Callable[[BaseModel], Awaitable[dict[str, Any] | ServiceError]]:
+) -> Callable[[Context, BaseModel], Awaitable[dict[str, Any] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 
-    async def post(obj: BaseModel) -> dict[str, Any] | ServiceError:
-        data = await repository["post"](obj)
+    async def post(ctx: Context, obj: BaseModel) -> dict[str, Any] | ServiceError:
+        data = await repository["post"](ctx, obj)
         if data is None:
             return ServiceError.RESOURCE_NOT_FOUND
 
@@ -84,14 +87,14 @@ def create_post_function(
 def create_patch_function(
     resource: str, model: type[BaseModel]
 ) -> Callable[
-    [ResourceIdentifier, BaseModel], Awaitable[dict[str, Any] | ServiceError]
+    [Context, ResourceIdentifier, BaseModel], Awaitable[dict[str, Any] | ServiceError]
 ]:
     repository = repositories.get_for_resource(resource, model)
 
     async def patch(
-        id: ResourceIdentifier, obj: BaseModel
+        ctx: Context, id: ResourceIdentifier, obj: BaseModel
     ) -> dict[str, Any] | ServiceError:
-        data = await repository["patch"](id, obj)
+        data = await repository["patch"](ctx, id, obj)
         if data is None:
             return ServiceError.RESOURCE_NOT_FOUND
 
@@ -102,11 +105,13 @@ def create_patch_function(
 
 def create_delete_function(
     resource: str, model: type[BaseModel]
-) -> Callable[[ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
+) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
     repository = repositories.get_for_resource(resource, model)
 
-    async def delete(id: ResourceIdentifier) -> dict[str, Any] | ServiceError:
-        data = await repository["delete"](id)
+    async def delete(
+        ctx: Context, id: ResourceIdentifier
+    ) -> dict[str, Any] | ServiceError:
+        data = await repository["delete"](ctx, id)
         if data is None:
             return ServiceError.RESOURCE_NOT_FOUND
 
