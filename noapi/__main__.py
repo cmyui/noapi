@@ -2,19 +2,14 @@
 from collections.abc import Mapping
 from typing import Any
 
-import fastapi
 import pydantic
 import starlette.routing
 import uvicorn
+from fastapi import FastAPI
+from fastapi.routing import APIRoute
 
 from noapi import controllers
 from noapi import models
-
-# GET /resources/{id}
-# GET /resources?{field}=abc&page=1&page_size=10
-# POST /resources
-# PATCH /resources/{id}
-# DELETE /resources/{id}
 
 
 def get_http_method(method: controllers.Method) -> str:
@@ -32,7 +27,7 @@ def create_endpoint(
     resource: dict[str, Any],
     method: controllers.Method,
     model: models.BaseModel,
-) -> fastapi.routing.APIRoute:
+) -> APIRoute:
     if method == controllers.Method.GET_ONE:
         endpoint_function = controllers.create_get_one_function(
             resource_name,
@@ -72,7 +67,7 @@ def create_endpoint(
     else:
         raise ValueError(f"Unknown method: {method}")
 
-    return fastapi.routing.APIRoute(
+    return APIRoute(
         path=path,
         endpoint=endpoint_function,
         methods=[get_http_method(method)],
@@ -133,7 +128,7 @@ def main(resources: Mapping[str, Any]) -> int:
                 raise ValueError(f"Unknown method: {method}")
 
             routes.append(
-                fastapi.routing.APIRoute(
+                APIRoute(
                     path=path,
                     endpoint=endpoint_function,
                     methods=[get_http_method(method)],
@@ -144,7 +139,7 @@ def main(resources: Mapping[str, Any]) -> int:
                 )
             )
 
-    api = fastapi.FastAPI(routes=routes)
+    api = FastAPI(routes=routes)
     uvicorn.run(api)
 
     return 0

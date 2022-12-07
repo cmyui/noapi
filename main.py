@@ -1,4 +1,5 @@
-import noapi.__main__
+#!/usr/bin/env python3
+from noapi import create_and_run_api
 
 if __name__ == "__main__":
     resources = {
@@ -21,5 +22,5 @@ if __name__ == "__main__":
         },
     }
 
-    exit_code = noapi.__main__.main(resources)
+    exit_code = create_and_run_api(resources)
     raise SystemExit(exit_code)
