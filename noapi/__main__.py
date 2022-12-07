@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
+from collections.abc import Awaitable
+from collections.abc import Callable
 from collections.abc import Mapping
 from typing import Any
 
+import databases
 import pydantic
 import starlette.routing
 import uvicorn
@@ -10,6 +13,7 @@ from fastapi.routing import APIRoute
 
 from noapi import controllers
 from noapi import models
+from noapi.services.sql import dsn
 
 
 def get_http_method(method: controllers.Method) -> str:
@@ -62,28 +66,80 @@ def create_endpoint(
     )
 
 
-def main(resources: Mapping[str, Any]) -> int:
+def create_startup_event(
+    api: FastAPI,
+    service_definition: Mapping[str, Any],
+) -> Callable[[], Awaitable[None]]:
+    async def on_startup() -> None:
+        match service_definition["type"]:
+            case "sql":
+                service = databases.Database(
+                    dsn(
+                        driver=service_definition["driver"],
+                        user=service_definition["user"],
+                        password=service_definition["password"],
+                        host=service_definition["host"],
+                        port=service_definition["port"],
+                        database=service_definition["database"],
+                    )
+                )
+                await service.connect()
+            case _:
+                raise ValueError(f"Unknown service type: {service_definition['type']}")
+
+        setattr(api.state, service_definition["name"], service)
+
+    return on_startup
+
+
+def create_shutdown_event(
+    api: FastAPI,
+    service_definition: Mapping[str, Any],
+) -> Callable[[], Awaitable[None]]:
+    async def on_shutdown() -> None:
+        service = getattr(api.state, service_definition["name"])
+        assert service is not None
+
+        match service_definition["type"]:
+            case "sql":
+                await service.disconnect()
+            case _:
+                raise ValueError(f"Unknown service type: {service_definition['type']}")
+
+        delattr(api.state, service_definition["name"])
+
+    return on_shutdown
+
+
+# TODO: more accurate model for specification
+def main(specification: Mapping[str, Any]) -> int:
     routes: list[starlette.routing.BaseRoute] = []
 
-    for resource_name, resource in resources.items():
+    for resource_def in specification["resources"]:
         # TODO: this creates the models in the pydantic.main namespace which
         #       *might* be a problem
         resource_model = pydantic.create_model(
-            resource_name,
-            **resource["model"],
+            resource_def["name"],
+            **resource_def["model"],
             __base__=models.BaseModel,
         )
 
-        for method in resource["methods"]:
+        for method in resource_def["methods"]:
             routes.append(
                 create_endpoint(
-                    resource_name,
+                    resource_def["name"],
                     method,
                     resource_model,
                 )
             )
 
     api = FastAPI(routes=routes)
+
+    # set up service initialization & teardown
+    for service_def in specification["services"]:
+        api.on_event("startup")(create_startup_event(api, service_def))
+        api.on_event("shutdown")(create_shutdown_event(api, service_def))
+
     uvicorn.run(api)
 
     return 0

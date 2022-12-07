@@ -14,3 +14,8 @@ class Context(abc.ABC):
     @abc.abstractmethod
     def http_client(self) -> httpx.AsyncClient:
         ...
+
+    # @property
+    # @abc.abstractmethod
+    # def redis_client(self) -> aioredis.Redis:
+    #     ...

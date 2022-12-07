@@ -6,11 +6,11 @@ from typing import Any
 from typing import TypedDict
 from typing import TypeVar
 
-from noapi import repositories
 from noapi._typing import ResourceIdentifier
 from noapi.context import Context
 from noapi.errors import ServiceError
 from noapi.models import BaseModel
+from noapi.repositories import sql  # TODO: user definable
 
 R = TypeVar("R")
 
@@ -38,7 +38,7 @@ def get_for_resource(resource: str, model: type[BaseModel]) -> ResourceUsecases:
 def create_get_one_function(
     resource: str, model: type[BaseModel]
 ) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
-    repository = repositories.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource, model)
 
     async def get_one(
         ctx: Context, id: ResourceIdentifier
@@ -55,7 +55,7 @@ def create_get_one_function(
 def create_get_many_function(
     resource: str, model: type[BaseModel]
 ) -> Callable[[Context, int, int], Awaitable[list[dict[str, Any]] | ServiceError]]:
-    repository = repositories.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource, model)
 
     async def get_many(
         ctx: Context, page: int, page_size: int
@@ -72,7 +72,7 @@ def create_get_many_function(
 def create_post_function(
     resource: str, model: type[BaseModel]
 ) -> Callable[[Context, BaseModel], Awaitable[dict[str, Any] | ServiceError]]:
-    repository = repositories.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource, model)
 
     async def post(ctx: Context, obj: BaseModel) -> dict[str, Any] | ServiceError:
         data = await repository["post"](ctx, obj)
@@ -89,7 +89,7 @@ def create_patch_function(
 ) -> Callable[
     [Context, ResourceIdentifier, BaseModel], Awaitable[dict[str, Any] | ServiceError]
 ]:
-    repository = repositories.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource, model)
 
     async def patch(
         ctx: Context, id: ResourceIdentifier, obj: BaseModel
@@ -106,7 +106,7 @@ def create_patch_function(
 def create_delete_function(
     resource: str, model: type[BaseModel]
 ) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
-    repository = repositories.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource, model)
 
     async def delete(
         ctx: Context, id: ResourceIdentifier
