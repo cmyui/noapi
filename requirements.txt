@@ -1,0 +1,7 @@
+databases
+fastapi
+httpx
+orjson
+requests
+structlog
+uvicorn
