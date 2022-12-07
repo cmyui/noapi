@@ -1,4 +1,4 @@
-databases
+databases[mysql]
 fastapi
 httpx
 orjson
