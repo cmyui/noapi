@@ -104,7 +104,7 @@ def create_post_function(
 
     query = f"""\
         INSERT INTO {resource_def["name"]} ({", ".join(write_params)})
-             VALUES ({", ".join(f":{k}" for k in model_cls.__fields__)})
+             VALUES ({", ".join(f":{k}" for k in write_params)})
     """
 
     read_query = f"""\

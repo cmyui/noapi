@@ -13,6 +13,7 @@ from fastapi.routing import APIRoute
 
 from noapi import controllers
 from noapi import models
+from noapi._typing import Specification
 from noapi.services.sql import dsn
 
 
@@ -112,7 +113,7 @@ def create_shutdown_event(
 
 
 # TODO: more accurate model for specification
-def main(specification: Mapping[str, Any]) -> int:
+def main(specification: Specification) -> int:
     routes: list[starlette.routing.BaseRoute] = []
 
     for resource_def in specification["resources"]:
@@ -124,14 +125,8 @@ def main(specification: Mapping[str, Any]) -> int:
             __base__=models.BaseModel,
         )
 
-        for method in resource_def["methods"]:
-            routes.append(
-                create_endpoint(
-                    resource_def,
-                    method,
-                    resource_model,
-                )
-            )
+        for method in map(controllers.Method, resource_def["methods"]):
+            routes.append(create_endpoint(resource_def, method, resource_model))
 
     api = FastAPI(routes=routes)
 
