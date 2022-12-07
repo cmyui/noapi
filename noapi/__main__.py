@@ -27,29 +27,34 @@ def get_http_method(method: controllers.Method) -> str:
 
 
 def create_endpoint(
-    resource_name: str,
+    resource_def: Mapping[str, Any],
     method: controllers.Method,
     model: type[models.BaseModel],
 ) -> APIRoute:
+    # TODO: maybe there should be another layer of abstraction here?
+    # this looks like shit
+
+    resource_name = resource_def["name"]
+
     if method == controllers.Method.GET_ONE:
-        endpoint_function = controllers.create_get_one_function(resource_name, model)
+        endpoint_function = controllers.create_get_one_function(resource_def, model)
         path = f"/{resource_name.lower()}/{{id}}"
         response_model = model
     elif method == controllers.Method.GET_MANY:
-        endpoint_function = controllers.create_get_many_function(resource_name, model)
+        endpoint_function = controllers.create_get_many_function(resource_def, model)
         path = f"/{resource_name.lower()}"
         response_model = list[type[model]]  # TODO: does this work? lol
         print(response_model)
     elif method == controllers.Method.POST:
-        endpoint_function = controllers.create_post_function(resource_name, model)
+        endpoint_function = controllers.create_post_function(resource_def, model)
         path = f"/{resource_name.lower()}"
         response_model = model
     elif method == controllers.Method.PATCH:
-        endpoint_function = controllers.create_patch_function(resource_name, model)
+        endpoint_function = controllers.create_patch_function(resource_def, model)
         path = f"/{resource_name.lower()}/{{id}}"
         response_model = model
     elif method == controllers.Method.DELETE:
-        endpoint_function = controllers.create_delete_function(resource_name, model)
+        endpoint_function = controllers.create_delete_function(resource_def, model)
         path = f"/{resource_name.lower()}/{{id}}"
         response_model = model
     else:
@@ -84,10 +89,9 @@ def create_startup_event(
                     )
                 )
                 await service.connect()
+                api.state.database_client = service
             case _:
                 raise ValueError(f"Unknown service type: {service_definition['type']}")
-
-        setattr(api.state, service_definition["name"], service)
 
     return on_startup
 
@@ -97,16 +101,12 @@ def create_shutdown_event(
     service_definition: Mapping[str, Any],
 ) -> Callable[[], Awaitable[None]]:
     async def on_shutdown() -> None:
-        service = getattr(api.state, service_definition["name"])
-        assert service is not None
-
         match service_definition["type"]:
             case "sql":
-                await service.disconnect()
+                await api.state.database_client.disconnect()
+                del api.state.database_client
             case _:
                 raise ValueError(f"Unknown service type: {service_definition['type']}")
-
-        delattr(api.state, service_definition["name"])
 
     return on_shutdown
 
@@ -127,7 +127,7 @@ def main(specification: Mapping[str, Any]) -> int:
         for method in resource_def["methods"]:
             routes.append(
                 create_endpoint(
-                    resource_def["name"],
+                    resource_def,
                     method,
                     resource_model,
                 )

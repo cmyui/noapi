@@ -5,6 +5,7 @@ if __name__ == "__main__":
     specification = {
         "services": [
             {
+                "name": "mysql",
                 "type": "sql",
                 "driver": "mysql",
                 "user": "cmyui",
@@ -17,22 +18,30 @@ if __name__ == "__main__":
         "resources": [
             {
                 "name": "Account",
+                "table_name": "accounts",
                 "methods": ["get_many", "get_one", "post", "patch", "delete"],
                 "model": {
                     "id": "UUID",
                     "name": "str",
                     "email": "str",
                     "password": "password",
+                    "created_at": "datetime",
+                    "updated_at": "datetime",
                 },
+                "backing_service": "mysql",  # NOTE: this is by service name
             },
             {
                 "name": "Session",
+                "table_name": "accounts",
                 "methods": ["get_many", "get_one", "post", "delete"],
                 "model": {
                     "id": "UUID",
                     "account_id": "UUID",  # TODO: something like "$Account.id"?
-                    "expires": "datetime",
+                    "expires_at": "datetime",
+                    "created_at": "datetime",
+                    "updated_at": "datetime",
                 },
+                "backing_service": "mysql",  # NOTE: this is by service name
             },
         ],
     }

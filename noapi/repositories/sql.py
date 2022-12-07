@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable
 from collections.abc import Callable
+from collections.abc import Mapping
 from typing import Any
 from typing import TypedDict
 from typing import TypeVar
@@ -24,14 +25,14 @@ class ResourceRepository(TypedDict):
 
 
 def get_for_resource(
-    resource_name: str, model_cls: type[BaseModel]
+    resource_def: Mapping[str, Any], model_cls: type[BaseModel]
 ) -> ResourceRepository:
     return {
-        "get_one": create_get_one_function(resource_name, model_cls),
-        "get_many": create_get_many_function(resource_name, model_cls),
-        "post": create_post_function(resource_name, model_cls),
-        "patch": create_patch_function(resource_name, model_cls),
-        "delete": create_delete_function(resource_name, model_cls),
+        "get_one": create_get_one_function(resource_def, model_cls),
+        "get_many": create_get_many_function(resource_def, model_cls),
+        "post": create_post_function(resource_def, model_cls),
+        "patch": create_patch_function(resource_def, model_cls),
+        "delete": create_delete_function(resource_def, model_cls),
     }
 
 
@@ -45,13 +46,13 @@ def _get_resource_write_params(model_cls: type[BaseModel]) -> list[str]:
 
 
 def create_get_one_function(
-    resource_name: str, model_cls: type[BaseModel]
+    resource_def: Mapping[str, Any], model_cls: type[BaseModel]
 ) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | None]]:
     read_params = _get_resource_read_params(model_cls)
 
     query = f"""\
         SELECT {", ".join(read_params)}
-          FROM {resource_name}
+          FROM {resource_def["table_name"]}
          WHERE id = :id
     """
 
@@ -69,13 +70,13 @@ def create_get_one_function(
 
 
 def create_get_many_function(
-    resource_name: str, model_cls: type[BaseModel]
+    resource_def: Mapping[str, Any], model_cls: type[BaseModel]
 ) -> Callable[[Context, int, int], Awaitable[list[dict[str, Any]]]]:
     read_params = _get_resource_read_params(model_cls)
 
     query = f"""\
         SELECT {", ".join(read_params)}
-          FROM {resource_name}
+          FROM {resource_def["table_name"]}
          LIMIT :limit
         OFFSET :offset
     """
@@ -96,19 +97,19 @@ def create_get_many_function(
 
 
 def create_post_function(
-    resource_name: str, model_cls: type[BaseModel]
+    resource_def: Mapping[str, Any], model_cls: type[BaseModel]
 ) -> Callable[[Context, BaseModel], Awaitable[dict[str, Any]]]:
     write_params = _get_resource_write_params(model_cls)
     read_params = _get_resource_read_params(model_cls)
 
     query = f"""\
-        INSERT INTO {resource_name} ({", ".join(write_params)})
+        INSERT INTO {resource_def["name"]} ({", ".join(write_params)})
              VALUES ({", ".join(f":{k}" for k in model_cls.__fields__)})
     """
 
     read_query = f"""\
         SELECT {", ".join(read_params)}
-          FROM {resource_name}
+          FROM {resource_def["table_name"]}
          WHERE id = :id
     """
 
@@ -131,20 +132,20 @@ def create_post_function(
 
 
 def create_patch_function(
-    resource_name: str, model_cls: type[BaseModel]
+    resource_def: Mapping[str, Any], model_cls: type[BaseModel]
 ) -> Callable[[Context, ResourceIdentifier, BaseModel], Awaitable[dict[str, Any]]]:
     write_params = _get_resource_write_params(model_cls)
     read_params = _get_resource_read_params(model_cls)
 
     query = f"""\
-        UPDATE {resource_name}
+        UPDATE {resource_def["table_name"]}
            SET {", ".join(f"{k} = :{k}" for k in write_params)}
          WHERE id = :id
     """
 
     read_query = f"""\
         SELECT {", ".join(read_params)}
-          FROM {resource_name}
+          FROM {resource_def["table_name"]}
          WHERE id = :id
     """
 
@@ -168,18 +169,18 @@ def create_patch_function(
 
 
 def create_delete_function(
-    resource_name: str, model_cls: type[BaseModel]
+    resource_def: Mapping[str, Any], model_cls: type[BaseModel]
 ) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any]]]:
     read_params = _get_resource_read_params(model_cls)
 
     query = f"""\
-        DELETE FROM {resource_name}
+        DELETE FROM {resource_def["table_name"]}
               WHERE id = :id
     """
 
     read_query = f"""\
         SELECT {", ".join(read_params)}
-          FROM {resource_name}
+          FROM {resource_def["table_name"]}
          WHERE id = :id
     """
 

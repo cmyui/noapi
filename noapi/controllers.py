@@ -1,6 +1,7 @@
 import enum
 from collections.abc import Awaitable
 from collections.abc import Callable
+from collections.abc import Mapping
 from typing import Any
 
 import fastapi
@@ -42,10 +43,10 @@ def determine_http_code(error: ServiceError) -> int:
 
 
 def create_get_many_function(
-    resource: str,
+    resource_def: Mapping[str, Any],
     model: type[models.BaseModel],
 ) -> Callable[[fastapi.Request], Awaitable[fastapi.Response]]:
-    usecases = _usecases.get_for_resource(resource, model)
+    usecases = _usecases.get_for_resource(resource_def, model)
 
     async def function(
         request: fastapi.Request,
@@ -57,7 +58,7 @@ def create_get_many_function(
         if usecase is None:
             logger.error(
                 f"No usecase available to process the incoming request",
-                resource=resource,
+                resource_name=resource_def["name"],
                 method=Method.GET_MANY,
             )
             return responses.failure(
@@ -85,10 +86,10 @@ def create_get_many_function(
 
 
 def create_get_one_function(
-    resource: str,
+    resource_def: Mapping[str, Any],
     model: type[models.BaseModel],
 ) -> Callable[[fastapi.Request], Awaitable[fastapi.Response]]:
-    usecases = _usecases.get_for_resource(resource, model)
+    usecases = _usecases.get_for_resource(resource_def, model)
 
     async def function(
         id: ResourceIdentifier,
@@ -98,7 +99,7 @@ def create_get_one_function(
         if usecase is None:
             logger.error(
                 f"No usecase available to process the incoming request",
-                resource=resource,
+                resource_name=resource_def["name"],
                 method=Method.GET_ONE,
             )
             return responses.failure(
@@ -126,10 +127,10 @@ def create_get_one_function(
 
 
 def create_post_function(
-    resource: str,
+    resource_def: Mapping[str, Any],
     model: type[models.BaseModel],
 ) -> Callable[[models.BaseModel], Awaitable[fastapi.Response]]:
-    usecases = _usecases.get_for_resource(resource, model)
+    usecases = _usecases.get_for_resource(resource_def, model)
 
     async def function(
         obj: models.BaseModel,
@@ -139,7 +140,7 @@ def create_post_function(
         if usecase is None:
             logger.error(
                 f"No usecase available to process the incoming request",
-                resource=resource,
+                resource_name=resource_def["name"],
                 method=Method.POST,
             )
             return responses.failure(
@@ -167,10 +168,10 @@ def create_post_function(
 
 
 def create_patch_function(
-    resource: str,
+    resource_def: Mapping[str, Any],
     model: type[models.BaseModel],
 ) -> Callable[[ResourceIdentifier, models.BaseModel], Awaitable[fastapi.Response]]:
-    usecases = _usecases.get_for_resource(resource, model)
+    usecases = _usecases.get_for_resource(resource_def, model)
 
     # TODO: need to type `obj` here dynamically. this might need a refactor?
     # TODO: can i type id here? (do i need to?)
@@ -183,7 +184,7 @@ def create_patch_function(
         if usecase is None:
             logger.error(
                 f"No usecase available to process the incoming request",
-                resource=resource,
+                resource_name=resource_def["name"],
                 method=Method.POST,
             )
             return responses.failure(
@@ -211,10 +212,10 @@ def create_patch_function(
 
 
 def create_delete_function(
-    resource: str,
+    resource_def: Mapping[str, Any],
     model: type[models.BaseModel],
 ) -> Callable[[fastapi.Request], Awaitable[fastapi.Response]]:
-    usecases = _usecases.get_for_resource(resource, model)
+    usecases = _usecases.get_for_resource(resource_def, model)
 
     # TODO: can i type id here? (do i need to?)
     async def function(
@@ -225,7 +226,7 @@ def create_delete_function(
         if usecase is None:
             logger.error(
                 f"No usecase available to process the incoming request",
-                resource=resource,
+                resource_name=resource_def["name"],
                 method=Method.POST,
             )
             return responses.failure(

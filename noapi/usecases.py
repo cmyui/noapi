@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Awaitable
 from collections.abc import Callable
+from collections.abc import Mapping
 from typing import Any
 from typing import TypedDict
 from typing import TypeVar
@@ -25,20 +26,22 @@ class ResourceUsecases(TypedDict):
 # fmt: on
 
 
-def get_for_resource(resource: str, model: type[BaseModel]) -> ResourceUsecases:
+def get_for_resource(
+    resource_def: Mapping[str, Any], model: type[BaseModel]
+) -> ResourceUsecases:
     return {
-        "get_one": create_get_one_function(resource, model),
-        "get_many": create_get_many_function(resource, model),
-        "post": create_post_function(resource, model),
-        "patch": create_patch_function(resource, model),
-        "delete": create_delete_function(resource, model),
+        "get_one": create_get_one_function(resource_def, model),
+        "get_many": create_get_many_function(resource_def, model),
+        "post": create_post_function(resource_def, model),
+        "patch": create_patch_function(resource_def, model),
+        "delete": create_delete_function(resource_def, model),
     }
 
 
 def create_get_one_function(
-    resource: str, model: type[BaseModel]
+    resource_def: Mapping[str, Any], model: type[BaseModel]
 ) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
-    repository = sql.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource_def, model)
 
     async def get_one(
         ctx: Context, id: ResourceIdentifier
@@ -53,9 +56,9 @@ def create_get_one_function(
 
 
 def create_get_many_function(
-    resource: str, model: type[BaseModel]
+    resource_def: Mapping[str, Any], model: type[BaseModel]
 ) -> Callable[[Context, int, int], Awaitable[list[dict[str, Any]] | ServiceError]]:
-    repository = sql.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource_def, model)
 
     async def get_many(
         ctx: Context, page: int, page_size: int
@@ -70,9 +73,9 @@ def create_get_many_function(
 
 
 def create_post_function(
-    resource: str, model: type[BaseModel]
+    resource_def: Mapping[str, Any], model: type[BaseModel]
 ) -> Callable[[Context, BaseModel], Awaitable[dict[str, Any] | ServiceError]]:
-    repository = sql.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource_def, model)
 
     async def post(ctx: Context, obj: BaseModel) -> dict[str, Any] | ServiceError:
         data = await repository["post"](ctx, obj)
@@ -85,11 +88,11 @@ def create_post_function(
 
 
 def create_patch_function(
-    resource: str, model: type[BaseModel]
+    resource_def: Mapping[str, Any], model: type[BaseModel]
 ) -> Callable[
     [Context, ResourceIdentifier, BaseModel], Awaitable[dict[str, Any] | ServiceError]
 ]:
-    repository = sql.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource_def, model)
 
     async def patch(
         ctx: Context, id: ResourceIdentifier, obj: BaseModel
@@ -104,9 +107,9 @@ def create_patch_function(
 
 
 def create_delete_function(
-    resource: str, model: type[BaseModel]
+    resource_def: Mapping[str, Any], model: type[BaseModel]
 ) -> Callable[[Context, ResourceIdentifier], Awaitable[dict[str, Any] | ServiceError]]:
-    repository = sql.get_for_resource(resource, model)
+    repository = sql.get_for_resource(resource_def, model)
 
     async def delete(
         ctx: Context, id: ResourceIdentifier
